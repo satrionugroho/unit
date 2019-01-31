@@ -16,7 +16,7 @@ static const nxt_http_request_state_t  nxt_http_request_send_error_body_state;
 
 
 static const char  error[] =
-    "<html><head><title>Error</title><head>"
+    "<html><head><title>Error</title></head>"
     "<body>Error.</body></html>\r\n";
 
 
@@ -37,7 +37,7 @@ nxt_http_request_error(nxt_task_t *task, nxt_http_request_t *r,
     r->status = status;
 
     r->resp.fields = nxt_list_create(r->mem_pool, 8, sizeof(nxt_http_field_t));
-    if (nxt_slow_path(r == NULL)) {
+    if (nxt_slow_path(r->resp.fields == NULL)) {
         goto fail;
     }
 

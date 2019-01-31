@@ -5,8 +5,8 @@
 
 
 # Disable localized program messages.
-LANG=C
-export LANG
+LC_ALL=C
+export LC_ALL
 
 # Stop on error exit status.
 set -e
@@ -32,6 +32,8 @@ CC=${CC:-cc}
 NXT_DAEMON=unitd
 NXT_BINDIR="bin"
 NXT_SBINDIR="sbin"
+NXT_LIBDIR="lib"
+NXT_INCDIR="include"
 NXT_MODULES="modules"
 NXT_STATE="state"
 NXT_PID="unit.pid"

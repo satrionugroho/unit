@@ -4,12 +4,7 @@ import unit
 class TestUnitGoApplication(unit.TestUnitApplicationGo):
 
     def setUpClass():
-        u = unit.TestUnit()
-
-        if u.architecture == '32bit':
-            raise unittest.SkipTest('Skip Go tests for x86')
-
-        u.check_modules('go')
+        unit.TestUnit().check_modules('go')
 
     def test_go_application_variables(self):
         self.load('variables')
@@ -110,13 +105,13 @@ class TestUnitGoApplication(unit.TestUnitApplicationGo):
         self.load('command_line_arguments')
 
         self.assertIn('error', self.conf(''"a b c",
-            '/applications/command_line_arguments/arguments'), 'arguments type')
+            'applications/command_line_arguments/arguments'), 'arguments type')
 
     def test_go_application_command_line_arguments_0(self):
         self.load('command_line_arguments')
 
         self.assertEqual(self.get()['headers']['X-Arg-0'],
-            self.conf_get('/applications/command_line_arguments/executable'),
+            self.conf_get('applications/command_line_arguments/executable'),
             'argument 0')
 
     def test_go_application_command_line_arguments(self):
@@ -127,7 +122,7 @@ class TestUnitGoApplication(unit.TestUnitApplicationGo):
         arg3 = '--debug'
 
         self.conf('["' + arg1 + '", "' + arg2 + '", "' + arg3 + '"]',
-            '/applications/command_line_arguments/arguments')
+            'applications/command_line_arguments/arguments')
 
         self.assertEqual(self.get()['body'], arg1 + ',' + arg2 + ',' + arg3,
             'arguments')
@@ -135,7 +130,7 @@ class TestUnitGoApplication(unit.TestUnitApplicationGo):
     def test_go_application_command_line_arguments_change(self):
         self.load('command_line_arguments')
 
-        args_path = '/applications/command_line_arguments/arguments'
+        args_path = 'applications/command_line_arguments/arguments'
 
         self.conf('["0", "a", "$", ""]', args_path)
 
@@ -151,4 +146,4 @@ class TestUnitGoApplication(unit.TestUnitApplicationGo):
             'arguments empty')
 
 if __name__ == '__main__':
-    unittest.main()
+    TestUnitGoApplication.main()

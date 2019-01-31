@@ -56,6 +56,25 @@ class TestUnitRubyApplication(unit.TestUnitApplicationRuby):
         self.assertEqual(resp['headers']['Query-String'], 'var1=val1&var2=val2',
             'Query-String header')
 
+    def test_ruby_application_query_string_empty(self):
+        self.load('query_string')
+
+        resp = self.get(url='/?')
+
+        self.assertEqual(resp['status'], 200, 'query string empty status')
+        self.assertEqual(resp['headers']['Query-String'], '',
+            'query string empty')
+
+    @unittest.expectedFailure
+    def test_ruby_application_query_string_absent(self):
+        self.load('query_string')
+
+        resp = self.get()
+
+        self.assertEqual(resp['status'], 200, 'query string absent status')
+        self.assertEqual(resp['headers']['Query-String'], '',
+            'query string absent')
+
     @unittest.expectedFailure
     def test_ruby_application_server_port(self):
         self.load('server_port')
@@ -284,4 +303,4 @@ class TestUnitRubyApplication(unit.TestUnitApplicationRuby):
         self.assertEqual(resp['body'], '0123456789', 'keep-alive 2')
 
 if __name__ == '__main__':
-    unittest.main()
+    TestUnitRubyApplication.main()

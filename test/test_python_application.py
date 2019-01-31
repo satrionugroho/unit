@@ -1,3 +1,4 @@
+import time
 import unittest
 import unit
 
@@ -53,6 +54,25 @@ class TestUnitPythonApplication(unit.TestUnitApplicationPython):
         self.assertEqual(resp['headers']['Query-String'], 'var1=val1&var2=val2',
             'Query-String header')
 
+    def test_python_application_query_string_empty(self):
+        self.load('query_string')
+
+        resp = self.get(url='/?')
+
+        self.assertEqual(resp['status'], 200, 'query string empty status')
+        self.assertEqual(resp['headers']['Query-String'], '',
+            'query string empty')
+
+    @unittest.expectedFailure
+    def test_python_application_query_string_absent(self):
+        self.load('query_string')
+
+        resp = self.get()
+
+        self.assertEqual(resp['status'], 200, 'query string absent status')
+        self.assertEqual(resp['headers']['Query-String'], '',
+            'query string absent')
+
     @unittest.expectedFailure
     def test_python_application_server_port(self):
         self.load('server_port')
@@ -60,7 +80,6 @@ class TestUnitPythonApplication(unit.TestUnitApplicationPython):
         self.assertEqual(self.get()['headers']['Server-Port'], '7080',
             'Server-Port header')
 
-    @unittest.expectedFailure
     def test_python_application_204_transfer_encoding(self):
         self.load('204_no_content')
 
@@ -86,6 +105,8 @@ class TestUnitPythonApplication(unit.TestUnitApplicationPython):
         })
 
         self.stop()
+
+        time.sleep(0.2)
 
         self.assertIsNotNone(self.search_in_log(r'RuntimeError'),
             'ctx iter atexit')
@@ -131,7 +152,7 @@ class TestUnitPythonApplication(unit.TestUnitApplicationPython):
             self.assertIn('success', self.conf({
                 "spare": i % 4,
                 "max": (i % 4) + 1
-            }, '/applications/mirror/processes'), 'reconfigure')
+            }, 'applications/mirror/processes'), 'reconfigure')
 
             socks.append(sock)
 
@@ -146,7 +167,7 @@ class TestUnitPythonApplication(unit.TestUnitApplicationPython):
             self.assertIn('success', self.conf({
                 "spare": i % 4,
                 "max": (i % 4) + 1
-            }, '/applications/mirror/processes'), 'reconfigure 2')
+            }, 'applications/mirror/processes'), 'reconfigure 2')
 
         for i in range(conns):
             resp = self.post(headers={
@@ -159,7 +180,60 @@ class TestUnitPythonApplication(unit.TestUnitApplicationPython):
             self.assertIn('success', self.conf({
                 "spare": i % 4,
                 "max": (i % 4) + 1
-            }, '/applications/mirror/processes'), 'reconfigure 3')
+            }, 'applications/mirror/processes'), 'reconfigure 3')
+
+    def test_python_keepalive_reconfigure_2(self):
+        self.skip_alerts.append(r'sendmsg.+failed')
+        self.load('mirror')
+
+        body = '0123456789'
+
+        (resp, sock) = self.post(headers={
+            'Connection': 'keep-alive',
+            'Content-Type': 'text/html',
+            'Host': 'localhost'
+        }, start=True, body=body)
+
+        self.assertEqual(resp['body'], body, 'reconfigure 2 keep-alive 1')
+
+        self.load('empty')
+
+        (resp, sock) = self.post(headers={
+            'Connection': 'close',
+            'Content-Type': 'text/html',
+            'Host': 'localhost'
+        }, start=True, sock=sock, body=body)
+
+        self.assertEqual(resp['status'], 200, 'reconfigure 2 keep-alive 2')
+        self.assertEqual(resp['body'], '', 'reconfigure 2 keep-alive 2 body')
+
+        self.assertIn('success', self.conf({
+            "listeners": {},
+            "applications": {}
+        }), 'reconfigure 2 clear configuration')
+
+        resp = self.get(sock=sock)
+
+        self.assertEqual(resp, {}, 'reconfigure 2 keep-alive 3')
+
+    def test_python_keepalive_reconfigure_3(self):
+        self.skip_alerts.append(r'sendmsg.+failed')
+        self.load('empty')
+
+        (resp, sock) = self.http(b"""GET / HTTP/1.1
+""", start=True, raw=True)
+
+        self.assertIn('success', self.conf({
+            "listeners": {},
+            "applications": {}
+        }), 'reconfigure 3 clear configuration')
+
+        resp = self.http(b"""Host: localhost
+Connection: close
+
+""", sock=sock, raw=True)
+
+        self.assertEqual(resp['status'], 200, 'reconfigure 3')
 
     def test_python_atexit(self):
         self.skip_alerts.append(r'sendmsg.+failed')
@@ -190,7 +264,6 @@ class TestUnitPythonApplication(unit.TestUnitApplicationPython):
 
         self.assertEqual(self.post(body=body)['body'], body, 'input iter')
 
-    @unittest.expectedFailure
     def test_python_application_input_read_length(self):
         self.load('input_read_length')
 
@@ -298,4 +371,4 @@ class TestUnitPythonApplication(unit.TestUnitApplicationPython):
         self.assertEqual(self.get()['body'], '0123456789', 'write')
 
 if __name__ == '__main__':
-    unittest.main()
+    TestUnitPythonApplication.main()
